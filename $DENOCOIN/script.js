@@ -1,91 +1,70 @@
-  // ===== TOKENOMICS PIE CHART =====
-    function initializePieChart() {
-        const pieChart = document.getElementById('pieChart');
-        if (!pieChart) return;
-        
-        const tokenomicsData = [
-            { category: 'Liquidity Pool (Locked)', percentage: 80, color: '#4fc3f7' },
-            { category: 'Marketing & Burns', percentage: 15, color: '#d4af37' },
-            { category: 'Development (Locked 6mo)', percentage: 5, color: '#7b2cbf' }
-        ];
-        
-        // Calculate conic gradient
-        let accumulatedPercentage = 0;
-        const conicGradientStops = tokenomicsData.map((item) => {
-            const startPercentage = accumulatedPercentage;
-            accumulatedPercentage += item.percentage;
-            return `${item.color} ${startPercentage}% ${accumulatedPercentage}%`;
-        }).join(', ');
-        
-        pieChart.style.background = `conic-gradient(${conicGradientStops})`;
-    }
-    
-    // ===== INTERSECTION OBSERVER FOR ANIMATIONS =====
-    function createIntersectionObserver() {
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-in');
-                    
-                    // Trigger specific animations based on section
-                    if (entry.target.classList.contains('tokenomics-section')) {
-                        initializePieChart();
-                        animateProgressBars();
-                    }
-                    
-                    if (entry.target.classList.contains('roadmap-section')) {
-                        animateRoadmapItems();
-                    }
-                }
-            });
-        }, observerOptions);
-        
-        // Observe sections
-        const sections = document.querySelectorAll('section');
-        sections.forEach(section => {
-            observer.observe(section);
-        });
-        
-        // Observe feature cards
-        const featureCards = document.querySelectorAll('.feature-card');
-        featureCards.forEach(card => {
-            observer.observe(card);
-        });
-        
-        // Observe step cards
-        const stepCards = document.querySelectorAll('.step-card');
-        stepCards.forEach(card => {
-            observer.observe(card);
-        });
-    }
-    
-    // ===== PROGRESS BAR ANIMATIONS =====
-    function animateProgressBars() {
-        const progressBars = document.querySelectorAll('.distribution-progress');
-        progressBars.forEach((bar, index) => {
-            setTimeout(() => {
-                const percentage = bar.style.width;
-                bar.style.width = '0%';
-                setTimeout(() => {
-                    bar.style.width = percentage;
-                }, 100);
-            }, index * 200);
-        });
-    }
-    
+const menuToggle = document.querySelector('.menu-toggle');
+const navigation = document.getElementById('main-nav');
 
-       
-    // ===== ROADMAP ANIMATIONS =====
-    function animateRoadmapItems() {
-        const roadmapItems = document.querySelectorAll('.roadmap-item');
-        roadmapItems.forEach((item, index) => {
-            setTimeout(() => {
-                item.classList.add('animate-in');
-            }, index * 200);
-        });
-    }
+function closeMenu() {
+  menuToggle.setAttribute('aria-expanded', 'false');
+  menuToggle.setAttribute('aria-label', 'Open navigation');
+  navigation.classList.remove('is-open');
+}
+
+menuToggle.addEventListener('click', () => {
+  const isOpen = menuToggle.getAttribute('aria-expanded') === 'true';
+  menuToggle.setAttribute('aria-expanded', String(!isOpen));
+  menuToggle.setAttribute('aria-label', isOpen ? 'Open navigation' : 'Close navigation');
+  navigation.classList.toggle('is-open', !isOpen);
+});
+navigation.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && menuToggle.getAttribute('aria-expanded') === 'true') {
+    closeMenu();
+    menuToggle.focus();
+  }
+});
+
+const guideTabs = Array.from(document.querySelectorAll('[role="tab"]'));
+function selectGuide(tab) {
+  guideTabs.forEach(item => {
+    const selected = item === tab;
+    item.setAttribute('aria-selected', String(selected));
+    item.tabIndex = selected ? 0 : -1;
+    document.getElementById(item.getAttribute('aria-controls')).hidden = !selected;
+  });
+}
+guideTabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => selectGuide(tab));
+  tab.addEventListener('keydown', event => {
+    let nextIndex = index;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = (index + 1) % guideTabs.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = (index - 1 + guideTabs.length) % guideTabs.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = guideTabs.length - 1;
+    else return;
+    event.preventDefault();
+    selectGuide(guideTabs[nextIndex]);
+    guideTabs[nextIndex].focus();
+  });
+});
+
+const imageDialog = document.getElementById('image-dialog');
+const dialogImage = document.getElementById('dialog-image');
+const dialogCaption = document.getElementById('dialog-caption');
+document.querySelectorAll('[data-lightbox]').forEach(button => {
+  button.addEventListener('click', () => {
+    dialogImage.src = button.dataset.lightbox;
+    dialogImage.alt = button.querySelector('img').alt;
+    dialogCaption.textContent = button.dataset.caption;
+    imageDialog.showModal();
+  });
+});
+document.querySelector('.dialog-close').addEventListener('click', () => imageDialog.close());
+imageDialog.addEventListener('click', event => {
+  if (event.target !== imageDialog) return;
+  const bounds = imageDialog.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) imageDialog.close();
+});
+imageDialog.addEventListener('close', () => {
+  dialogImage.removeAttribute('src');
+  dialogImage.alt = '';
+  dialogCaption.textContent = '';
+});
+document.getElementById('year').textContent = new Date().getFullYear();
